@@ -60,7 +60,12 @@ export default {async fetch(request,env) {
     const limit=await env.REQUEST_LIMITER.get(env.REQUEST_LIMITER.idFromName('personal')).fetch('https://limiter/check',{method:'POST'});
     if(!limit.ok)throw new HttpError(429,'Analysis limit reached. Wait a minute, or use manual entry. Daily limit is 10 attempts (UTC day).');
     const upstream=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{Authorization:`Bearer ${env.OPENAI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-4.1-mini',store:false,max_output_tokens:2500,instructions,input:[{role:'user',content:[{type:'input_text',text:'Identify the individual foods in this meal for review. Do not provide nutrition values.'},{type:'input_image',image_url:data.image,detail:'high'}]}],text:{format:{type:'json_schema',name:'meal_foods',strict:true,schema:analysisSchema}}}),signal:AbortSignal.timeout(55000)});
-    if(!upstream.ok){await upstream.body?.cancel();throw new HttpError(502,'The AI service could not complete analysis. Check account credit and model access, then retry or use manual entry.');}
+    if(!upstream.ok){let failure;try{failure=await upstream.json()}catch{}const code=failure?.error?.code,type=failure?.error?.type;
+      if(code==='credit_balance_exhausted'||code==='insufficient_quota'||type==='insufficient_quota')throw new HttpError(503,'OpenAI API credit is exhausted. Add credit in OpenAI Platform billing, or use manual food entry. A ChatGPT subscription does not include API credit.');
+      if(upstream.status===429)throw new HttpError(429,'OpenAI is temporarily rate-limiting analysis. Wait and retry, or use manual entry.');
+      if(upstream.status===401)throw new HttpError(502,'The backend OpenAI key is not authenticated. Check the server key setup.');
+      if(upstream.status===403||upstream.status===404)throw new HttpError(502,'The backend OpenAI project may not have access to the configured model. Check project and model permissions.');
+      throw new HttpError(502,'The AI service could not complete analysis. Retry later or use manual entry.');}
     const result=await upstream.json();
     if(result.status!=='completed')throw new HttpError(502,'Analysis did not finish. Retry with a simpler photo or use manual entry.');
     const texts=result.output?.flatMap(o=>o.content||[]).filter(c=>c.type==='output_text').map(c=>c.text)||[];

@@ -78,12 +78,13 @@ export function validateBackup(data) {
   if (data?.app !== 'JD Food Tracker' || data.version !== 1 || !Array.isArray(data.meals) || data.meals.length > 20000) throw new Error('This is not a supported JD Food Tracker backup.');
   const ids = new Set();
   for (const meal of data.meals) {
-    if (!isText(meal.id,100) || !meal.id || ids.has(meal.id) || !isText(meal.name,200) || !isText(meal.notes || '') || meal.items?.length > 100 || typeof meal.favourite !== 'boolean') throw new Error('Invalid or duplicated meal in backup.');
+    if (!isText(meal.id,100) || !/^[a-zA-Z0-9-]+$/.test(meal.id) || ids.has(meal.id) || !isText(meal.name,200) || !isText(meal.notes || '') || !Array.isArray(meal.items) || meal.items.length > 100 || typeof meal.favourite !== 'boolean' || !isText(meal.createdAt,100) || !Number.isFinite(Date.parse(meal.createdAt)) || !['Breakfast','Lunch','Dinner','Snack','Drink'].includes(meal.type)) throw new Error('Invalid or duplicated meal in backup.');
     ids.add(meal.id);
     if (meal.photo && (!isText(meal.photo,2200000) || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(meal.photo))) throw new Error('Invalid photo in backup.');
     for (const i of meal.items || []) {
       const f = i.food;
-      if (!f || !isText(f.name,500) || !isText(f.source,500) || !f.per100g || !isText(i.name || '',500) || !isText(i.assumptions || '') || !isText(i.rangeReason || '')) throw new Error('Invalid food source in backup.');
+      if (!f || !isText(i.id,100) || !/^[a-zA-Z0-9-]+$/.test(i.id) || !isText(f.name,500) || !isText(f.source,500) || !isText(f.preparation,500) || !f.per100g || !isText(i.name || '',500) || !isText(i.assumptions || '') || !isText(i.rangeReason || '')) throw new Error('Invalid food source in backup.');
+      if (f.portions && (!Array.isArray(f.portions) || f.portions.length>100 || f.portions.some(p=>!isText(p.label,500) || !Number.isFinite(p.grams) || p.grams<=0))) throw new Error('Invalid gram conversion in backup.');
       for (const k of NUTRIENTS) if (f.per100g[k] !== null && (!Number.isFinite(f.per100g[k]) || f.per100g[k] < 0 || f.per100g[k] > 10000)) throw new Error('Invalid nutrient in backup.');
       if (f.sourceUrl && (!isText(f.sourceUrl,1000) || !/^https:\/\/(fdc|agdatacommons)\.nal\.usda\.gov\//.test(f.sourceUrl))) throw new Error('Invalid source URL.');
     }

@@ -7,3 +7,5 @@ dist/
 .cache/
 public/data/foods.json
 public/icons/*.png
+.pnpm-store/
+PRIVATE-BACKEND-ACCESS.txt

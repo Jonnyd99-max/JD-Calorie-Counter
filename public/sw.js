@@ -1,4 +1,4 @@
-const CACHE = 'jd-food-shell-v1';
+const CACHE = 'jd-food-shell-33b9f98c43a29464';
 const ROOT = new URL('./', self.location.href);
 const ASSETS = ['index.html','styles.css','app.js','core.js','storage.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable.png','icons/icon.svg','data/foods.json'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS.map(p=>new URL(p,ROOT).href)))));
