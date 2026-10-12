@@ -1,47 +1,43 @@
-"""Build a compact, traceable offline database from the official USDA release.
-Standard library only. No guessed nutrient values or household conversions.
+"""Build offline nutrition from the official USDA SR Legacy ASCII archive.
+Column definitions: USDA SR-Legacy Documentation, April 2018 / revised July 2018.
+Standard library only. No guessed nutrient values or gram conversions.
 """
 import csv, hashlib, io, json, pathlib, urllib.request, zipfile
 
-URL = 'https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip'
+URL = 'https://www.ars.usda.gov/ARSUserFiles/80400525/Data/SR-Legacy/SR-Leg_ASC.zip'
+SOURCE = 'https://agdatacommons.nal.usda.gov/articles/dataset/USDA_National_Nutrient_Database_for_Standard_Reference_Legacy_Release/24661818'
 target = pathlib.Path('public/data/foods.json')
-cache = pathlib.Path('.cache/usda-sr-legacy.zip')
+cache = pathlib.Path('.cache/usda-sr-legacy-ascii.zip')
 cache.parent.mkdir(exist_ok=True)
 if not cache.exists():
-    print('Downloading official USDA SR Legacy April 2018 release…')
+    print('Downloading official USDA SR Legacy archived release…')
     with urllib.request.urlopen(URL, timeout=120) as response:
         cache.write_bytes(response.read())
 archive = zipfile.ZipFile(cache)
 def rows(name):
-    paths = [p for p in archive.namelist() if p.rsplit('/', 1)[-1] == name]
+    paths = [p for p in archive.namelist() if p.rsplit('/', 1)[-1].upper() == name]
     if len(paths) != 1:
         raise RuntimeError(f'Expected one {name} in official archive')
-    return csv.DictReader(io.TextIOWrapper(archive.open(paths[0]), encoding='utf-8-sig', newline=''))
+    return csv.reader(io.TextIOWrapper(archive.open(paths[0]), encoding='latin-1', newline=''), delimiter='^', quotechar='~')
 
 foods = {}
-for row in rows('food.csv'):
-    name = row['description']
+for row in rows('FOOD_DES.TXT'):
+    ndb, name = row[0], row[2]
     lower = name.lower()
     prep = 'Raw' if ', raw' in lower else 'Cooked' if any(t in lower for t in [', cooked', ', roasted', ', fried', ', boiled', ', baked', ', grilled', ', broiled', ', braised', ', stewed', ', poached']) else 'See matched food description'
-    fid = int(row['fdc_id'])
-    foods[str(fid)] = {'id': str(fid), 'name': name, 'source': 'USDA FoodData Central · SR Legacy (April 2018)', 'sourceUrl': f'https://fdc.nal.usda.gov/food-details/{fid}/nutrients', 'preparation': prep, 'per100g': {'calories': None, 'protein': None, 'carbs': None, 'fat': None}, 'portions': []}
-nutrient_ids = {'1008': 'calories', '1003': 'protein', '1005': 'carbs', '1004': 'fat'}
-for row in rows('food_nutrient.csv'):
-    food, key = foods.get(row['fdc_id']), nutrient_ids.get(row['nutrient_id'])
-    if food and key and row['amount'] != '':
-        food['per100g'][key] = float(row['amount'])
-for row in rows('food_portion.csv'):
-    food = foods.get(row['fdc_id'])
-    # Legacy measure wording describes the complete portion with this gram weight.
-    modifier = row.get('modifier', '').strip()
-    gram_weight = row.get('gram_weight', '')
-    amount = row.get('amount', '')
-    if food and modifier and gram_weight and float(gram_weight) > 0:
-        label = f'{amount} {modifier}'.strip() if amount else modifier
-        food['portions'].append({'id': row['id'], 'label': label, 'grams': float(gram_weight)})
-if len(foods) < 7000:
-    raise RuntimeError('Unexpectedly small USDA dataset; refusing to publish')
+    foods[ndb] = {'id': 'ndb-' + ndb, 'ndbNumber': ndb, 'name': name, 'source': 'USDA SR Legacy (April 2018) · NDB ' + ndb, 'sourceUrl': SOURCE, 'preparation': prep, 'per100g': {'calories': None, 'protein': None, 'carbs': None, 'fat': None}, 'portions': []}
+nutrient_ids = {'208': 'calories', '203': 'protein', '205': 'carbs', '204': 'fat'}
+for row in rows('NUT_DATA.TXT'):
+    food, key = foods.get(row[0]), nutrient_ids.get(row[1])
+    if food and key and row[2] != '':
+        food['per100g'][key] = float(row[2])
+for row in rows('WEIGHT.TXT'):
+    food = foods.get(row[0])
+    if food and row[3] and row[4] and float(row[4]) > 0:
+        food['portions'].append({'id': row[1], 'label': row[2] + ' ' + row[3], 'grams': float(row[4])})
+if len(foods) != 7793:
+    raise RuntimeError('Unexpected USDA record count; refusing to publish')
 target.parent.mkdir(exist_ok=True, parents=True)
-output = {'dataset': 'USDA FoodData Central SR Legacy', 'release': 'April 2018', 'downloadUrl': URL, 'archiveSha256': hashlib.sha256(cache.read_bytes()).hexdigest(), 'nutrientBasis': '100 g edible portion', 'foods': list(foods.values())}
+output = {'dataset': 'USDA National Nutrient Database SR Legacy', 'release': 'April 2018 (archived July revision)', 'downloadUrl': URL, 'sourceUrl': SOURCE, 'archiveSha256': hashlib.sha256(cache.read_bytes()).hexdigest(), 'nutrientBasis': '100 g edible portion', 'foods': list(foods.values())}
 target.write_text(json.dumps(output, separators=(',', ':'), ensure_ascii=False), encoding='utf-8')
-print(f'Built {len(foods):,} foods with sourced gram measures → {target}')
+print(f'Built {len(foods):,} foods with sourced gram measures -> {target}')

@@ -24,8 +24,8 @@ jobs:
         run: node --test tests/*.test.js
       - uses: actions/cache@v4
         with:
-          path: .cache/usda-sr-legacy.zip
-          key: usda-sr-legacy-april-2018-v1
+          path: .cache/usda-sr-legacy-ascii.zip
+          key: usda-sr-legacy-ascii-2018-v1
       - name: Build source-backed offline nutrition database
         run: python scripts/download-usda.py
       - name: Build static app and icons

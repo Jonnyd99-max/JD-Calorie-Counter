@@ -85,7 +85,7 @@ export function validateBackup(data) {
       const f = i.food;
       if (!f || !isText(f.name,500) || !isText(f.source,500) || !f.per100g || !isText(i.name || '',500) || !isText(i.assumptions || '') || !isText(i.rangeReason || '')) throw new Error('Invalid food source in backup.');
       for (const k of NUTRIENTS) if (f.per100g[k] !== null && (!Number.isFinite(f.per100g[k]) || f.per100g[k] < 0 || f.per100g[k] > 10000)) throw new Error('Invalid nutrient in backup.');
-      if (f.sourceUrl && (!isText(f.sourceUrl,1000) || !/^https:\/\/fdc\.nal\.usda\.gov\//.test(f.sourceUrl))) throw new Error('Invalid source URL.');
+      if (f.sourceUrl && (!isText(f.sourceUrl,1000) || !/^https:\/\/(fdc|agdatacommons)\.nal\.usda\.gov\//.test(f.sourceUrl))) throw new Error('Invalid source URL.');
     }
     validateMeal(meal);
   }

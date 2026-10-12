@@ -21,9 +21,9 @@ The manifest, 192/512 px PNG icons, maskable icon, HTTPS and service worker supp
 
 ## Nutrition source and honest uncertainty
 
-The build downloads the official **USDA FoodData Central SR Legacy, April 2018** CSV release, converts the database to a searchable offline JSON index and records the archive SHA-256. Each food retains its FDC ID, exact description, source link, preparation and per-100 g nutrient values. Missing values stay null. Energy values are preserved, even when they differ from a simple 4/4/9 calculation. Documented household measure gram weights are retained from `food_portion.csv`.
+The build downloads the official **USDA SR Legacy, April 2018 (archived July revision)** ASCII release from USDA Agricultural Research Service, converts 7,793 foods to a searchable offline JSON index and records the archive SHA-256. Each food retains its NDB number, exact description, source dataset link, preparation and per-100 g nutrient values. Missing values stay null. Energy values are preserved, even when they differ from a simple 4/4/9 calculation. Documented household gram weights are retained from `WEIGHT.txt`. This is the same Standard Reference release incorporated into FoodData Central; the archive uses NDB numbers rather than FDC IDs.
 
-Source: https://fdc.nal.usda.gov/download-datasets/
+Source: https://agdatacommons.nal.usda.gov/articles/dataset/USDA_National_Nutrient_Database_for_Standard_Reference_Legacy_Release/24661818
 
 This database covers generic US foods and preparation variants. The final SR Legacy release is not updated. UK brand formulations, recipes and serving sizes may differ. For a packaged product, use **Nutrition label**, confirm its reference and values, and specify whether the basis is 100 g or a serving. Per-serving labels require serving grams. Blank nutrients mean unavailable, not zero.
 
