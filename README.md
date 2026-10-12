@@ -75,6 +75,8 @@ GitHub Actions tests the app, unpacks the verified database index, builds icons/
 
 ## Validation
 
+See [VALIDATION.md](VALIDATION.md) for completed production/browser checks, current billing blocker and remaining Android/photo checks.
+
 Tests cover scaling gram weights; documented measures; per-serving labels; raw/cooked selection; multiple ingredient totals; missing nutrients; explicit estimate bounds; independent match/quantity certainty; favourite reuse without mutation; backup round-trip/rejection; backend authentication, CORS, upload limits, provider request configuration and persistent rate limits. Database integrity tests run after the official data is built.
 
 Browser QA should check real IndexedDB save/edit/delete, export/import, offline reload and service-worker update preservation. Synthetic nutrition fixtures verify arithmetic, not photo accuracy.
