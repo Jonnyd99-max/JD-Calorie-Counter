@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+.wrangler/
+.cache/
+public/data/foods.json
+public/icons/*.png
