@@ -1,0 +1,15 @@
+{
+  "name": "jd-food-api",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "vars": {
+    "ALLOWED_ORIGIN": "https://jonnyd99-max.github.io",
+    "OPENAI_MODEL": "gpt-4.1-mini"
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "REQUEST_LIMITER", "class_name": "RequestLimiter" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RequestLimiter"] }],
+  "observability": { "enabled": false }
+}
