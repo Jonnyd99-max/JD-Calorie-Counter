@@ -21,7 +21,9 @@ The manifest, 192/512 px PNG icons, maskable icon, HTTPS and service worker supp
 
 ## Nutrition source and honest uncertainty
 
-The build downloads the official **USDA SR Legacy, April 2018 (archived July revision)** ASCII release from USDA Agricultural Research Service, converts 7,793 foods to a searchable offline JSON index and records the archive SHA-256. Each food retains its NDB number, exact description, source dataset link, preparation and per-100 g nutrient values. Missing values stay null. Energy values are preserved, even when they differ from a simple 4/4/9 calculation. Documented household gram weights are retained from `WEIGHT.txt`. This is the same Standard Reference release incorporated into FoodData Central; the archive uses NDB numbers rather than FDC IDs.
+The included verified index comes from the official **USDA SR Legacy, April 2018 (archived July revision)** ASCII release from USDA Agricultural Research Service. It contains 7,793 foods and records the original archive SHA-256. Each food retains its NDB number, exact description, source dataset link, preparation and per-100 g nutrient values. Missing values stay null. Energy values are preserved, even when they differ from a simple 4/4/9 calculation. Documented household gram weights are retained from `WEIGHT.txt`. This is the same Standard Reference release incorporated into FoodData Central; the archive uses NDB numbers rather than FDC IDs.
+
+`vendor/usda-foods.json.gz` contains this compact public-domain index. Builds unpack it without network access; `scripts/download-usda.py` and `scripts/vendor-data.mjs` document how to regenerate it from the official archive.
 
 Source: https://agdatacommons.nal.usda.gov/articles/dataset/USDA_National_Nutrient_Database_for_Standard_Reference_Legacy_Release/24661818
 
@@ -61,14 +63,13 @@ No frontend npm dependencies. Node 22+ and Python 3.12+:
 
 ```text
 node --test tests/*.test.js
-python scripts/download-usda.py
 node scripts/build.mjs
 node scripts/serve.mjs
 ```
 
 Local preview: http://127.0.0.1:5173 . The backend allows only the production origin by default; test changes to the allowed origin must not weaken production authentication.
 
-GitHub Actions tests the app, downloads/caches the official database, builds icons/app, validates source records and deploys the `dist` artifact to Pages. In repository **Settings → Pages**, select **GitHub Actions** as the source. No backend secrets belong in the Pages workflow. Backend deployment is separate.
+GitHub Actions tests the app, unpacks the verified database index, builds icons/app, validates source records and deploys the `dist` artifact to Pages. In repository **Settings → Pages**, select **GitHub Actions** as the source. No backend secrets belong in the Pages workflow. Backend deployment is separate.
 
 `public/` is the entire public app. `.env*`, `.cache/`, `node_modules/`, `dist/` and Wrangler state are ignored. Only `.env.example` is tracked. The build copies `public/` and never environment files.
 

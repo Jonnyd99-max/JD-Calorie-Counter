@@ -17,17 +17,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - name: Test calculations, backups and backend security
         run: node --test tests/*.test.js
-      - uses: actions/cache@v4
-        with:
-          path: .cache/usda-sr-legacy-ascii.zip
-          key: usda-sr-legacy-ascii-2018-v1
-      - name: Build source-backed offline nutrition database
-        run: python scripts/download-usda.py
       - name: Build static app and icons
         run: node scripts/build.mjs
       - name: Validate deployed dataset
