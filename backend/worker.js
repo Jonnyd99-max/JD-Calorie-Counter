@@ -19,8 +19,10 @@ export async function readLimitedJson(request) {
 }
 export function validateImage(image) {
   if(typeof image!=='string'||image.length>2200000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(image))throw new HttpError(400,'Upload a resized JPEG photo.');
-  let bytes;try{bytes=Uint8Array.from(atob(image.split(',')[1]),c=>c.charCodeAt(0))}catch{throw new HttpError(400,'Invalid photo encoding.')}
-  if(bytes.length<100||bytes[0]!==255||bytes[1]!==216||bytes[2]!==255||bytes.at(-2)!==255||bytes.at(-1)!==217)throw new HttpError(400,'Photo is not a valid JPEG.');
+  // The client re-encodes images without EXIF. Decode only a bounded header and
+  // trailer for validation, keeping large-photo CPU usage suitable for Free.
+  let bytes,tail;try{const b64=image.slice(image.indexOf(',')+1);bytes=Uint8Array.from(atob(b64.slice(0,65536)),c=>c.charCodeAt(0));tail=atob(b64.slice(-8))}catch{throw new HttpError(400,'Invalid photo encoding.')}
+  if(bytes.length<100||bytes[0]!==255||bytes[1]!==216||bytes[2]!==255||tail.charCodeAt(tail.length-2)!==255||tail.charCodeAt(tail.length-1)!==217)throw new HttpError(400,'Photo is not a valid JPEG.');
   // Read the JPEG frame: reject excessive dimensions before sending it upstream.
   let p=2,width=0,height=0;
   while(p+4<bytes.length){if(bytes[p++]!==255)continue;let marker=bytes[p++];while(marker===255)marker=bytes[p++];if(marker===217||marker===218)break;if(marker===216||(marker>=208&&marker<=215))continue;const length=(bytes[p]<<8)|bytes[p+1];if(length<2||p+length>bytes.length)throw new HttpError(400,'Malformed JPEG photo.');if([192,193,194].includes(marker)){height=(bytes[p+3]<<8)|bytes[p+4];width=(bytes[p+5]<<8)|bytes[p+6];break}p+=length}
